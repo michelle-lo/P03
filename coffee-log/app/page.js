@@ -24,6 +24,9 @@ export default function Home() {
 
   const [editingEntry, setEditingEntry] = useState(null);
 
+  const [toast, setToast] = useState(null); // { message, type } | null
+
+
 
   async function loadEntries() {
     try {
@@ -114,11 +117,14 @@ export default function Home() {
       if (!res.ok) {
         const message = data.error || "Error creating entry.";
         setErrorMsg(message);
+        showToast(message, "error");
         return { ok: false, message };
       } else {
         setEntries((prev) => [data, ...prev]);
+        showToast("Drink added to your log ☕", "success");
         return { ok: true };
       }
+      
     } catch (err) {
       console.error(err);
       const message = "Server error creating entry.";
@@ -174,14 +180,17 @@ export default function Home() {
       if (!res.ok) {
         const message = data.error || "Error updating entry.";
         setErrorMsg(message);
+        showToast(message, "error");
         return { ok: false, message };
       } else {
-        // update in local state
         setEntries((prev) =>
           prev.map((e) => (e.id === data.id ? data : e))
         );
+        showToast("Entry updated ✏️", "success");
         return { ok: true };
       }
+      
+      
     } catch (err) {
       console.error(err);
       const message = "Server error updating entry.";
@@ -199,15 +208,29 @@ export default function Home() {
       const res = await fetch(`/api/coffee/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error || "Error deleting entry.");
+        const message = data.error || "Error deleting entry.";
+        setErrorMsg(message);
+        showToast(message, "error");
         return;
       }
       setEntries((prev) => prev.filter((e) => e.id !== id));
+      showToast("Entry deleted 🗑️", "success");
+      
     } catch (err) {
       console.error(err);
       setErrorMsg("Server error deleting entry.");
     }
   }
+
+  function showToast(message, type = "success") {
+    setToast({ message, type });
+  
+    // auto-hide after 3 seconds
+    setTimeout(() => {
+      setToast(null);
+    }, 3000);
+  }
+  
 
   // Filter + sort entries for display + map
   const visibleEntries = useMemo(() => {
@@ -416,6 +439,7 @@ export default function Home() {
             <CoffeeMap entries={visibleEntries} />
           </section>
         </aside>
+        
       </main>
 
       {/* Add-entry modal */}
@@ -439,6 +463,13 @@ export default function Home() {
         onUpdate={updateEntry}
         loading={loading}
       />
+
+      {toast && (
+        <div className={`toast toast-${toast.type}`}>
+          {toast.message}
+        </div>
+      )}
+
 
     </>
   );
