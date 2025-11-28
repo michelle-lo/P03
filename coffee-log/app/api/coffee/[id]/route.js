@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "../../../../lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 // DELETE /api/coffee/[id]
 export async function DELETE(_req, context) {
