@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -13,6 +13,11 @@ export default function AddEntryModal({ isOpen, onClose, onCreate, loading }) {
   const [date, setDate] = useState("");
   const [sweetness, setSweetness] = useState("");
   const [locationName, setLocationName] = useState("");
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const locationSearchTimeout = useRef(null);
+
+
   const [rating, setRating] = useState("");
   const [price, setPrice] = useState("");
   const [addedBy, setAddedBy] = useState("");
@@ -21,6 +26,7 @@ export default function AddEntryModal({ isOpen, onClose, onCreate, loading }) {
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
 
+  
   const [localError, setLocalError] = useState(null);
 
   useEffect(() => {
@@ -108,6 +114,53 @@ export default function AddEntryModal({ isOpen, onClose, onCreate, loading }) {
     }
   }
 
+  async function fetchLocationSuggestions(query) {
+    if (!query.trim()) {
+      setLocationSuggestions([]);
+      return;
+    }
+  
+    try {
+      setLocationLoading(true);
+      const res = await fetch(`/api/places?q=${encodeURIComponent(query)}`);
+  
+      if (!res.ok) {
+        console.error("Location suggestions error:", res.statusText);
+        setLocationSuggestions([]);
+        return;
+      }
+  
+      const data = await res.json();
+      setLocationSuggestions(data || []);
+    } catch (err) {
+      console.error("Location suggestions error:", err);
+      setLocationSuggestions([]);
+    } finally {
+      setLocationLoading(false);
+    }
+  }
+  
+
+  function handleLocationChange(e) {
+    const value = e.target.value;
+    setLocationName(value);
+  
+    if (locationSearchTimeout.current) {
+      clearTimeout(locationSearchTimeout.current);
+    }
+  
+    locationSearchTimeout.current = setTimeout(() => {
+      fetchLocationSuggestions(value);
+    }, 300);
+  }
+  
+  function handleLocationPick(option) {
+    setLocationName(option.display_name);
+    setLocationSuggestions([]);
+  }
+  
+  
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
@@ -172,14 +225,40 @@ export default function AddEntryModal({ isOpen, onClose, onCreate, loading }) {
               />
             </label>
 
-            <label>
-              Location name*
-              <input
-                value={locationName}
-                onChange={(e) => setLocationName(e.target.value)}
-                required
-              />
+            <label className="full">
+                Location name*
+                <input
+                    value={locationName}
+                    onChange={handleLocationChange}
+                    placeholder="Start typing a café or address"
+                    required
+                />
+
+                {locationLoading && (
+                    <div className="location-suggestions">
+                    <div className="location-suggestion">Searching…</div>
+                    </div>
+                )}
+
+                {!locationLoading && locationSuggestions.length > 0 && (
+                    <div className="location-suggestions">
+                    {locationSuggestions.map((opt) => (
+                        <button
+                        type="button"
+                        key={opt.place_id}
+                        className="location-suggestion"
+                        onClick={() => handleLocationPick(opt)}
+                        >
+                        <div className="location-suggestion-name">
+                            {opt.display_name}
+                        </div>
+                        </button>
+                    ))}
+                    </div>
+                )}
             </label>
+
+
 
             <label>
               Your name or nickname

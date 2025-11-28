@@ -374,3 +374,34 @@ button:disabled {
   height: auto;
   display: block;
 }
+
+.location-suggestions {
+  margin-top: 4px;
+  border-radius: 10px;
+  background: #020617;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  max-height: 180px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+}
+
+.location-suggestion {
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.location-suggestion:hover {
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.location-suggestion-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
