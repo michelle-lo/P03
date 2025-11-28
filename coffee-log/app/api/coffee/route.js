@@ -38,23 +38,26 @@ export async function POST(req) {
 
     const date = body.date ? new Date(body.date).toISOString() : null;
 
+    const added_by = body.added_by ? String(body.added_by).trim() : null;
+
     const { data, error } = await supabase
-      .from("coffee_entries")
-      .insert([
+    .from("coffee_entries")
+    .insert([
         {
-          drink_name,
-          sweetness,
-          location_name,
-          lat,
-          lng,
-          rating,
-          price,
-          image_url: body.image_url || null,
-          date,
+        drink_name,
+        sweetness,
+        location_name,
+        lat,
+        lng,
+        rating,
+        price,
+        image_url: body.image_url || null,
+        date,
+        added_by,  // 👈 new
         },
-      ])
-      .select()
-      .single();
+    ])
+    .select()
+    .single();
 
     if (error) {
       console.error("POST /api/coffee error:", error);

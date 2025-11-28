@@ -190,3 +190,62 @@ button:disabled {
   color: var(--muted);
   font-size: 0.9rem;
 }
+
+/* === Two-column layout for page + map === */
+
+.page-two-col {
+  /* override some base .page settings */
+  max-width: 1200px;          /* a bit wider to fit map + content */
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* Left side: form + list stacked vertically */
+.content-column {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Right side: map card */
+.map-column {
+  flex: 1;
+  min-width: 260px;
+}
+
+/* Keep the map visible while scrolling (nice UX on desktop) */
+.map-card {
+  position: sticky;
+  top: 24px;
+}
+
+/* Map container helpers (inside CoffeeMap) */
+.map-wrapper {
+  margin-top: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.map-placeholder {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px dashed rgba(148, 163, 184, 0.5);
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* Mobile: stack everything again */
+@media (max-width: 900px) {
+  .page-two-col {
+    flex-direction: column;
+  }
+
+  .map-card {
+    position: static;
+  }
+}
