@@ -65,6 +65,7 @@ export async function PUT(req, context) {
             : null,
         image_url: body.image_url || null,
         date: body.date ? new Date(body.date).toISOString() : null,
+        notes: body.notes || null,
       };
   
       const { data, error } = await supabase

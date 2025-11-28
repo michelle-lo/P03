@@ -5,7 +5,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("coffee_entries")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("date", { ascending: false });
 
   if (error) {
     console.error("GET /api/coffee error:", error);
@@ -40,6 +40,8 @@ export async function POST(req) {
 
     const added_by = body.added_by ? String(body.added_by).trim() : null;
 
+    const notes = body.notes ? String(body.notes).trim() : null;
+
     const { data, error } = await supabase
     .from("coffee_entries")
     .insert([
@@ -53,7 +55,8 @@ export async function POST(req) {
         price,
         image_url: body.image_url ?? null,
         date,
-        added_by,  // 👈 new
+        added_by,  
+        notes
         },
     ])
     .select()

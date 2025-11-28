@@ -16,6 +16,7 @@ export default function AddEntryModal({ isOpen, onClose, onCreate, loading }) {
   const [rating, setRating] = useState("");
   const [price, setPrice] = useState("");
   const [addedBy, setAddedBy] = useState("");
+  const [notes, setNotes] = useState("");
 
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -75,6 +76,7 @@ export default function AddEntryModal({ isOpen, onClose, onCreate, loading }) {
       price,
       image_url: uploadedImageUrl,
       added_by: addedBy,
+      notes
     });
 
     if (result.ok) {
@@ -85,6 +87,7 @@ export default function AddEntryModal({ isOpen, onClose, onCreate, loading }) {
       setRating("");
       setPrice("");
       setAddedBy("");
+      setNotes("");
       setImageFile(null);
       setPreviewUrl(null);
       onClose();
@@ -128,11 +131,12 @@ export default function AddEntryModal({ isOpen, onClose, onCreate, loading }) {
             </label>
 
             <label>
-              Date
+              Date of Visit*
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
+                required
               />
             </label>
 
@@ -188,6 +192,15 @@ export default function AddEntryModal({ isOpen, onClose, onCreate, loading }) {
             <label>
               Upload Image
               <input type="file" accept="image/*" onChange={handleFileChange} />
+            </label>
+
+            <label className="full">
+              Notes
+              <input
+              
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
             </label>
 
             {previewUrl && (

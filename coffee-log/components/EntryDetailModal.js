@@ -44,6 +44,15 @@ export default function EntryDetailModal({ entry, onClose }) {
           )}
         </div>
 
+        {entry.notes && entry.notes.trim() && (
+            <div className="notes-section">
+                <h3 className="notes-title">Notes</h3>
+                <p className="notes-body">{entry.notes}</p>
+            </div>
+        )}
+
+        
+
         {entry.image_url && (
           <img
             src={entry.image_url}

@@ -76,6 +76,7 @@ export default function Home() {
       price,
       image_url,
       added_by,
+      notes
     } = formValues;
 
     if (!drinkName.trim() || !locationName.trim()) {
@@ -101,6 +102,7 @@ export default function Home() {
           lng,
           date,
           added_by,
+          notes
         }),
       });
 
