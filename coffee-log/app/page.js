@@ -74,7 +74,7 @@ export default function Home() {
       locationName,
       rating,
       price,
-      imageUrl,
+      image_url,
       added_by,
     } = formValues;
 
@@ -96,7 +96,7 @@ export default function Home() {
           location_name: locationName,
           rating,
           price,
-          image_url: imageUrl,
+          image_url,
           lat,
           lng,
           date,

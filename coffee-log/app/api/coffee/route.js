@@ -51,7 +51,7 @@ export async function POST(req) {
         lng,
         rating,
         price,
-        image_url: body.image_url || null,
+        image_url: body.image_url ?? null,
         date,
         added_by,  // 👈 new
         },
