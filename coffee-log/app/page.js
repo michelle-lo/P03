@@ -8,6 +8,7 @@ const CoffeeMap = dynamic(() => import("../components/CoffeeMap"), {
 });
 import AddEntryModal from "../components/AddEntryModal";
 import EntryDetailModal from "../components/EntryDetailModal";
+import EditEntryModal from "../components/EditEntryModal";
 
 export default function Home() {
   const [entries, setEntries] = useState([]);
@@ -20,6 +21,9 @@ export default function Home() {
   const [sortKey, setSortKey] = useState("created_at"); // created_at | rating | sweetness | price
   const [sortDir, setSortDir] = useState("desc");
   const [addedByFilter, setAddedByFilter] = useState("");
+
+  const [editingEntry, setEditingEntry] = useState(null);
+
 
   async function loadEntries() {
     try {
@@ -124,6 +128,70 @@ export default function Home() {
       setLoading(false);
     }
   }
+
+  async function updateEntry(id, formValues) {
+    const {
+      drinkName,
+      date,
+      sweetness,
+      locationName,
+      rating,
+      price,
+      image_url,
+      added_by,
+      notes,
+    } = formValues;
+  
+    if (!drinkName.trim() || !locationName.trim()) {
+      return { ok: false, message: "Drink name and location are required." };
+    }
+  
+    setErrorMsg(null);
+    setLoading(true);
+    try {
+      // reuse your geocoding so map stays accurate
+      const { lat, lng } = await geocodeLocation(locationName);
+  
+      const res = await fetch(`/api/coffee/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          drink_name: drinkName,
+          sweetness,
+          location_name: locationName,
+          rating,
+          price,
+          image_url,
+          lat,
+          lng,
+          date,
+          added_by,
+          notes,
+        }),
+      });
+  
+      const data = await res.json();
+      if (!res.ok) {
+        const message = data.error || "Error updating entry.";
+        setErrorMsg(message);
+        return { ok: false, message };
+      } else {
+        // update in local state
+        setEntries((prev) =>
+          prev.map((e) => (e.id === data.id ? data : e))
+        );
+        return { ok: true };
+      }
+    } catch (err) {
+      console.error(err);
+      const message = "Server error updating entry.";
+      setErrorMsg(message);
+      return { ok: false, message };
+    } finally {
+      setLoading(false);
+    }
+  }
+  
 
   async function handleDelete(id) {
     setErrorMsg(null);
@@ -296,7 +364,9 @@ export default function Home() {
                       {e.added_by && (
                         <p className="detail">Logged by {e.added_by}</p>
                       )}
-                      {/* tiny preview */}
+                      {e.notes && (
+                        <p className="detail">Notes: {e.notes}</p>
+                      )}
                       {e.image_url && (
                         <img
                           src={e.image_url}
@@ -305,17 +375,31 @@ export default function Home() {
                         />
                       )}
                     </div>
-                    <button
-                      type="button"
-                      className="delete-btn"
-                      onClick={(evt) => {
-                        evt.stopPropagation();
-                        handleDelete(e.id);
-                      }}
-                    >
-                      ✕
-                    </button>
+                  
+                    <div className="entry-actions">
+                      <button
+                        type="button"
+                        className="edit-btn"
+                        onClick={(evt) => {
+                          evt.stopPropagation();
+                          setEditingEntry(e);
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="delete-btn"
+                        onClick={(evt) => {
+                          evt.stopPropagation();
+                          handleDelete(e.id);
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </li>
+                
                 ))}
               </ul>
             )}
@@ -347,6 +431,15 @@ export default function Home() {
         entry={selectedEntry}
         onClose={() => setSelectedEntry(null)}
       />
+
+      <EditEntryModal
+        entry={editingEntry}
+        isOpen={Boolean(editingEntry)}
+        onClose={() => setEditingEntry(null)}
+        onUpdate={updateEntry}
+        loading={loading}
+      />
+
     </>
   );
 }
