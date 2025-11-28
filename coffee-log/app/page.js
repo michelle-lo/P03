@@ -1,25 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 
 const CoffeeMap = dynamic(() => import("../components/CoffeeMap"), {
   ssr: false,
 });
+import AddEntryModal from "../components/AddEntryModal";
+import EntryDetailModal from "../components/EntryDetailModal";
 
 export default function Home() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  const [drinkName, setDrinkName] = useState("");
-  const [date, setDate] = useState("");
-  const [sweetness, setSweetness] = useState("");
-  const [locationName, setLocationName] = useState("");
-  const [rating, setRating] = useState("");
-  const [price, setPrice] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [added_by, setAddedBy] = useState(""); // 👈 name/nickname
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState(null);
+
+  const [sortKey, setSortKey] = useState("created_at"); // created_at | rating | sweetness | price
+  const [sortDir, setSortDir] = useState("desc");
+  const [addedByFilter, setAddedByFilter] = useState("");
 
   async function loadEntries() {
     try {
@@ -65,15 +65,24 @@ export default function Home() {
     loadEntries();
   }, []);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setErrorMsg(null);
+  // Called by AddEntryModal
+  async function createEntry(formValues) {
+    const {
+      drinkName,
+      date,
+      sweetness,
+      locationName,
+      rating,
+      price,
+      imageUrl,
+      added_by,
+    } = formValues;
 
     if (!drinkName.trim() || !locationName.trim()) {
-      setErrorMsg("Drink name and location are required.");
-      return;
+      return { ok: false, message: "Drink name and location are required." };
     }
 
+    setErrorMsg(null);
     setLoading(true);
     try {
       const { lat, lng } = await geocodeLocation(locationName);
@@ -91,28 +100,24 @@ export default function Home() {
           lat,
           lng,
           date,
-          added_by, // 👈 send to backend
+          added_by,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error || "Error creating entry.");
+        const message = data.error || "Error creating entry.";
+        setErrorMsg(message);
+        return { ok: false, message };
       } else {
         setEntries((prev) => [data, ...prev]);
-        // Clear form
-        setDrinkName("");
-        setDate("");
-        setSweetness("");
-        setLocationName("");
-        setRating("");
-        setPrice("");
-        setImageUrl("");
-        setAddedBy(""); // 👈 clear name
+        return { ok: true };
       }
     } catch (err) {
       console.error(err);
-      setErrorMsg("Server error creating entry.");
+      const message = "Server error creating entry.";
+      setErrorMsg(message);
+      return { ok: false, message };
     } finally {
       setLoading(false);
     }
@@ -134,169 +139,212 @@ export default function Home() {
     }
   }
 
+  // Filter + sort entries for display + map
+  const visibleEntries = useMemo(() => {
+    let filtered = [...entries];
+
+    if (addedByFilter.trim()) {
+      const needle = addedByFilter.trim().toLowerCase();
+      filtered = filtered.filter((e) =>
+        (e.added_by || "").toLowerCase().includes(needle)
+      );
+    }
+
+    filtered.sort((a, b) => {
+      const dir = sortDir === "asc" ? 1 : -1;
+
+      const getVal = (entry) => {
+        if (sortKey === "created_at") return entry.created_at || "";
+        if (sortKey === "rating") return entry.rating ?? -Infinity;
+        if (sortKey === "sweetness") return entry.sweetness ?? -Infinity;
+        if (sortKey === "price") return Number(entry.price ?? -Infinity);
+        return entry.created_at || "";
+      };
+
+      const va = getVal(a);
+      const vb = getVal(b);
+
+      if (va < vb) return -1 * dir;
+      if (va > vb) return 1 * dir;
+      return 0;
+    });
+
+    return filtered;
+  }, [entries, addedByFilter, sortKey, sortDir]);
+
+  function handleSortChange(key) {
+    if (sortKey === key) {
+      // toggle direction
+      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  }
+
   return (
-    <main className="page page-two-col">
-      {/* LEFT: form + list */}
-      <div className="content-column">
-        <section className="card">
-          <h1>Coffee & Latte Log ☕</h1>
-          <p className="subtitle">
-            Track your drinks, date of visits, sweetness, and favorite cafés.
-          </p>
-
-          <form className="form" onSubmit={handleSubmit}>
-            <div className="form-grid">
-              <label>
-                Drink name*
-                <input
-                  value={drinkName}
-                  onChange={(e) => setDrinkName(e.target.value)}
-                  placeholder="Iced vanilla latte"
-                />
-              </label>
-
-              <label>
-                Date
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
-              </label>
-
-              <label>
-                Sweetness (1–5)
-                <input
-                  type="number"
-                  min="1"
-                  max="5"
-                  value={sweetness}
-                  onChange={(e) => setSweetness(e.target.value)}
-                />
-              </label>
-
-              <label>
-                Rating (1–5)
-                <input
-                  type="number"
-                  min="1"
-                  max="5"
-                  value={rating}
-                  onChange={(e) => setRating(e.target.value)}
-                />
-              </label>
-
-              <label>
-                Price ($)
-                <input
-                  type="number"
-                  step="0.01"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                />
-              </label>
-
-              <label>
-                Location name*
-                <input
-                  value={locationName}
-                  onChange={(e) => setLocationName(e.target.value)}
-                  placeholder="Phoenix Coffee – Larchmere"
-                />
-              </label>
-
-              {/* NEW: Logged by / name field */}
-              <label>
-                Your name or nickname
-                <input
-                  value={added_by}
-                  onChange={(e) => setAddedBy(e.target.value)}
-                  placeholder="Michelle, M.L., etc."
-                />
-              </label>
-
-              <label className="full">
-                Image URL
-                <input
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://…"
-                />
-              </label>
+    <>
+      <main className="page page-two-col">
+        {/* LEFT: coffee log list + controls */}
+        <div className="content-column">
+          <section className="card">
+            <div className="card-header">
+              <div>
+                <h1>Coffee & Latte Log ☕</h1>
+                <p className="subtitle">
+                  Track drinks, sweetness, price, and who logged them.
+                </p>
+              </div>
+              <button type="button" onClick={() => setIsAddOpen(true)}>
+                + Add Drink
+              </button>
             </div>
 
-            <button type="submit" disabled={loading}>
-              {loading ? "Saving…" : "Add Drink"}
-            </button>
-          </form>
+            {errorMsg && <p className="error">{errorMsg}</p>}
 
-          {errorMsg && <p className="error">{errorMsg}</p>}
-        </section>
+            {/* Filters + sort controls */}
+            <div className="controls-row">
+              <div className="control-group">
+                <span className="control-label">Sort by:</span>
+                <button
+                  type="button"
+                  className={
+                    sortKey === "created_at" ? "chip chip-active" : "chip"
+                  }
+                  onClick={() => handleSortChange("created_at")}
+                >
+                  Date {sortKey === "created_at" && (sortDir === "asc" ? "↑" : "↓")}
+                </button>
+                <button
+                  type="button"
+                  className={
+                    sortKey === "rating" ? "chip chip-active" : "chip"
+                  }
+                  onClick={() => handleSortChange("rating")}
+                >
+                  Rating {sortKey === "rating" && (sortDir === "asc" ? "↑" : "↓")}
+                </button>
+                <button
+                  type="button"
+                  className={
+                    sortKey === "sweetness" ? "chip chip-active" : "chip"
+                  }
+                  onClick={() => handleSortChange("sweetness")}
+                >
+                  Sweetness{" "}
+                  {sortKey === "sweetness" && (sortDir === "asc" ? "↑" : "↓")}
+                </button>
+                <button
+                  type="button"
+                  className={
+                    sortKey === "price" ? "chip chip-active" : "chip"
+                  }
+                  onClick={() => handleSortChange("price")}
+                >
+                  Price {sortKey === "price" && (sortDir === "asc" ? "↑" : "↓")}
+                </button>
+              </div>
 
-        <section className="card">
-          <div className="card-header">
-            <h2>Coffee Log</h2>
-            <span className="badge">{entries.length}</span>
-          </div>
+              <div className="control-group">
+                <span className="control-label">Filter by Logged By:</span>
+                <input
+                  className="small-input"
+                  value={addedByFilter}
+                  onChange={(e) => setAddedByFilter(e.target.value)}
+                  placeholder="e.g. Michelle"
+                />
+              </div>
+            </div>
+          </section>
 
-          {entries.length === 0 ? (
-            <p className="empty">No drinks logged yet. Add your first above!</p>
-          ) : (
-            <ul className="entry-list">
-              {entries.map((e) => (
-                <li key={e.id} className="entry">
-                  <div className="entry-main">
-                    <div className="entry-top">
-                      <h3>{e.drink_name}</h3>
-                      {e.rating && (
-                        <span className="pill">⭐ {e.rating}/5</span>
+          <section className="card">
+            <div className="card-header">
+              <h2>Coffee Log</h2>
+              <span className="badge">{visibleEntries.length}</span>
+            </div>
+
+            {visibleEntries.length === 0 ? (
+              <p className="empty">
+                No drinks match this view. Try adding one or clearing filters.
+              </p>
+            ) : (
+              <ul className="entry-list">
+                {visibleEntries.map((e) => (
+                  <li
+                    key={e.id}
+                    className="entry entry-clickable"
+                    onClick={() => setSelectedEntry(e)}
+                  >
+                    <div className="entry-main">
+                      <div className="entry-top">
+                        <h3>{e.drink_name}</h3>
+                        {e.rating && (
+                          <span className="pill">⭐ {e.rating}/5</span>
+                        )}
+                        {e.sweetness && (
+                          <span className="pill">🍯 {e.sweetness}/5</span>
+                        )}
+                        {e.price !== null && e.price !== undefined && (
+                          <span className="pill">
+                            ${Number(e.price).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      <p className="location">{e.location_name}</p>
+                      {e.added_by && (
+                        <p className="detail">Logged by {e.added_by}</p>
                       )}
-                      {e.sweetness && (
-                        <span className="pill">🍯 {e.sweetness}/5</span>
-                      )}
-                      {e.price !== null && (
-                        <span className="pill">
-                          ${Number(e.price).toFixed(2)}
-                        </span>
+                      {/* tiny preview */}
+                      {e.image_url && (
+                        <img
+                          src={e.image_url}
+                          alt={e.drink_name}
+                          className="thumb thumb-small"
+                        />
                       )}
                     </div>
-                    <p className="location">{e.location_name}</p>
-                    {/* NEW: Logged by text */}
-                    {e.added_by && (
-                      <p className="detail">Logged by {e.added_by}</p>
-                    )}
-                    {e.image_url && (
-                      <img
-                        src={e.image_url}
-                        alt={e.drink_name}
-                        className="thumb"
-                      />
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    className="delete-btn"
-                    onClick={() => handleDelete(e.id)}
-                  >
-                    ✕
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
+                    <button
+                      type="button"
+                      className="delete-btn"
+                      onClick={(evt) => {
+                        evt.stopPropagation();
+                        handleDelete(e.id);
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
 
-      {/* RIGHT: map column */}
-      <aside className="map-column">
-        <section className="card map-card">
-          <h2>Cafés Map</h2>
-          <p className="subtitle">
-            See all your logged spots on the map.
-          </p>
-          <CoffeeMap entries={entries} />
-        </section>
-      </aside>
-    </main>
+        {/* RIGHT: map column */}
+        <aside className="map-column">
+          <section className="card map-card">
+            <h2>Cafés Map</h2>
+            <p className="subtitle">
+              View all visible entries on the map. Sorting/filtering also apply here.
+            </p>
+            <CoffeeMap entries={visibleEntries} />
+          </section>
+        </aside>
+      </main>
+
+      {/* Add-entry modal */}
+      <AddEntryModal
+        isOpen={isAddOpen}
+        onClose={() => setIsAddOpen(false)}
+        onCreate={createEntry}
+        loading={loading}
+      />
+
+      {/* Entry detail modal */}
+      <EntryDetailModal
+        entry={selectedEntry}
+        onClose={() => setSelectedEntry(null)}
+      />
+    </>
   );
 }

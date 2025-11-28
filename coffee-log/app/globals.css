@@ -193,16 +193,15 @@ button:disabled {
 
 /* === Two-column layout for page + map === */
 
+/* two-column layout already in use */
 .page-two-col {
-  /* override some base .page settings */
-  max-width: 1200px;          /* a bit wider to fit map + content */
+  max-width: 1200px;
   display: flex;
   flex-direction: row;
   gap: 24px;
   align-items: flex-start;
 }
 
-/* Left side: form + list stacked vertically */
 .content-column {
   flex: 2;
   display: flex;
@@ -210,36 +209,145 @@ button:disabled {
   gap: 24px;
 }
 
-/* Right side: map card */
 .map-column {
   flex: 1;
   min-width: 260px;
 }
 
-/* Keep the map visible while scrolling (nice UX on desktop) */
 .map-card {
   position: sticky;
   top: 24px;
 }
 
-/* Map container helpers (inside CoffeeMap) */
-.map-wrapper {
-  margin-top: 12px;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.4);
+/* map sizing (adjust if you want) */
+.map-wrapper .leaflet-container,
+.map-card .leaflet-container {
+  height: 500px !important;
 }
 
-.map-placeholder {
+/* controls row (sort + filter) */
+.controls-row {
   margin-top: 12px;
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px dashed rgba(148, 163, 184, 0.5);
-  font-size: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.control-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.control-label {
+  font-size: 0.85rem;
   color: var(--muted);
 }
 
-/* Mobile: stack everything again */
+.chip {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--text);
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.chip-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4);
+}
+
+.small-input {
+  padding: 6px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: #020617;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+/* clickable entries */
+.entry-clickable {
+  cursor: pointer;
+}
+
+.entry-clickable:hover {
+  background: rgba(15, 23, 42, 0.9);
+}
+
+/* smaller list thumbnail */
+.thumb-small {
+  max-width: 90px;
+}
+
+/* modals */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 40;
+  padding: 16px;
+}
+
+.modal-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 18px 20px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: auto;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.9);
+}
+
+.detail-modal {
+  max-width: 600px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.icon-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  color: var(--text);
+}
+
+.detail-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+
+.detail-image {
+  margin-top: 10px;
+  max-width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+}
+
+/* responsive */
 @media (max-width: 900px) {
   .page-two-col {
     flex-direction: column;
