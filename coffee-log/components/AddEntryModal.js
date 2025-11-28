@@ -225,7 +225,7 @@ export default function AddEntryModal({ isOpen, onClose, onCreate, loading }) {
               />
             </label>
 
-            <label className="full">
+            <label>
                 Location name*
                 <input
                     value={locationName}
